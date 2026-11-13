@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>BASKETBALL IQ — Зачёт по физкультуре</title>
+  <style>
+    :root {
+      --bg-dark: #080b11;
+      --bg-card: rgba(17, 23, 35, 0.92);
+      --border-glass: rgba(255, 255, 255, 0.1);
+      --accent: #ff6b1a;
+      --accent-2: #ffb347;
+      --blue-glow: #38bdf8;
+      --text-main: #f8fafc;
+      --text-dim: #94a3b8;
+      --correct: #10b981;
+      --correct-bg: rgba(16, 185, 129, 0.18);
+      --wrong: #ef4444;
+      --wrong-bg: rgba(239, 68, 68, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(circle at 12% 14%, rgba(255, 107, 26, 0.25) 0%, transparent 45%),
+        radial-gradient(circle at 88% 86%, rgba(56, 189, 248, 0.18) 0%, transparent 45%),
+        linear-gradient(180deg, #0b0f18 0%, #05070c 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Subtle court grid overlay */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid var(--border-glass);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      animation: fadeUp 0.35s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .shake {
+      animation: shake 0.35s ease;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* START SCREEN */
+    .top-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(90deg, rgba(255, 107, 26, 0.22), rgba(255, 179, 71, 0.1));
+      border: 1px solid rgba(255, 107, 26, 0.4);
+      color: #ff9c63;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 7px 14px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-size: 40px;
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: -0.8px;
+      margin-bottom: 12px;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #ff6b1a 0%, #ffb347 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-dim);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+
+    /* VISUAL STAGE */
+    .visual-stage {
+      width: 100%;
+      height: 215px;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      background: #0e1420;
+      box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.55);
+    }
+
+    .visual-stage svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .stage-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(9, 12, 18, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 107, 26, 0.4);
+      color: #ff9457;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+
+    /* INPUT */
+    .field-box {
+      margin-bottom: 20px;
+    }
+
+    .field-box label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .field-box input {
+      width: 100%;
+      padding: 15px 18px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      background: rgba(9, 12, 18, 0.82);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .field-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(255, 107, 26, 0.2);
+    }
+
+    .chips-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .chip strong {
+      display: block;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+
+    /* BUTTONS */
+    .btn {
+      width: 100%;
+      padding: 17px 22px;
+      border: none;
+      border-radius: 16px;
+      font-family: inherit;
+      font-size: 15.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      touch-action: manipulation;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b1a 0%, #ff8c3b 100%);
+      color: #ffffff;
+      box-shadow: 0 12px 30px rgba(255, 107, 26, 0.38);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 36px rgba(255, 107, 26, 0.48);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.13);
+    }
+
+    /* QUIZ SCREEN */
+    .quiz-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .q-step {
+      color: var(--text-dim);
+    }
+
+    .badges-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .q-streak {
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+
+    .q-score {
+      background: rgba(255, 107, 26, 0.18);
+      color: #ff9c63;
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-weight: 800;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 6.66%;
+      background: linear-gradient(90deg, #ff6b1a, #ffb347);
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
+    .q-title {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.42;
+      margin-bottom: 20px;
+      color: #ffffff;
+    }
+
+    .options-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .opt-btn {
+      width: 100%;
+      text-align: left;
+      background: rgba(11, 15, 23, 0.8);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      color: #f1f5f9;
+      padding: 15px 16px;
+      border-radius: 16px;
+      font-family: inherit;
+      font-size: 14.5px;
+      font-weight: 600;
+      line-height: 1.35;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      touch-action: manipulation;
+    }
+
+    .opt-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: rgba(255, 107, 26, 0.11);
+      transform: translateY(-2px);
+    }
+
+    .opt-btn:disabled {
+      cursor: default;
+    }
+
+    .opt-key {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .opt-btn.correct {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+    }
+
+    .opt-btn.correct .opt-key {
+      background: var(--correct);
+      color: #052e16;
+    }
+
+    .opt-btn.wrong {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+    }
+
+    .opt-btn.wrong .opt-key {
+      background: var(--wrong);
+      color: #ffffff;
+    }
+
+    /* EXPLANATION BOX */
+    .explain-card {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: rgba(9, 13, 20, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-left: 4px solid var(--accent);
+      animation: fadeUp 0.25s ease;
+    }
+
+    .explain-head {
+      font-size: 14.5px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .explain-body {
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.55;
+    }
+
+    .next-wrap {
+      margin-top: 20px;
+    }
+
+    /* RESULT SCREEN - PLAYER CARD STYLE */
+    .result-box {
+      text-align: center;
+    }
+
+    .player-card {
+      background: linear-gradient(155deg, rgba(255, 107, 26, 0.18) 0%, rgba(15, 23, 42, 0.96) 55%, rgba(56, 189, 248, 0.14) 100%);
+      border: 2px solid rgba(255, 107, 26, 0.48);
+      border-radius: 26px;
+      padding: 26px 20px;
+      margin: 18px 0;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-top-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #ff9c63;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .score-ring {
+      width: 136px;
+      height: 136px;
+      border-radius: 50%;
+      margin: 0 auto 14px;
+      background: radial-gradient(circle, rgba(255, 107, 26, 0.26) 0%, rgba(10, 14, 22, 0.96) 72%);
+      border: 5px solid var(--accent);
+      box-shadow: 0 0 38px rgba(255, 107, 26, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-ring .big-num {
+      font-size: 42px;
+      font-weight: 900;
+      line-height: 1;
+      color: #ffffff;
+    }
+
+    .score-ring .out-of {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffa570;
+      margin-top: 4px;
+    }
+
+    .student-tag {
+      font-size: 19px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .rank-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .grade-pill {
+      display: inline-block;
+      padding: 9px 20px;
+      border-radius: 999px;
+      font-size: 14.5px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .stats-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-cell {
+      background: rgba(9, 12, 18, 0.6);
+      border-radius: 12px;
+      padding: 10px 6px;
+    }
+
+    .stat-cell span {
+      display: block;
+      font-size: 16px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .stat-cell small {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .result-note {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.55;
+      margin-top: 14px;
+    }
+
+    .result-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    /* REVIEW LIST */
+    .review-panel {
+      margin-top: 18px;
+      text-align: left;
+      background: rgba(9, 12, 18, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 20px;
+      padding: 18px;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .review-panel h3 {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    .review-item {
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      margin-bottom: 10px;
+      border-left: 3px solid var(--correct);
+      font-size: 13px;
+    }
+
+    .review-item.is-wrong {
+      border-left-color: var(--wrong);
+    }
+
+    .review-q {
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 5px;
+    }
+
+    .review-ans {
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 12px; }
+      .glass-card { padding: 20px; border-radius: 24px; }
+      .hero-title { font-size: 30px; }
+      .visual-stage { height: 175px; }
+      .q-title { font-size: 17.5px; }
+      .options-list { grid-template-columns: 1fr; gap: 10px; }
+      .opt-btn { padding: 14px; font-size: 14px; }
+      .result-actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="app-wrapper">
+    <!-- START SCREEN -->
+    <section id="screen-start" class="glass-card">
+      <div class="top-pill">🏀 Зачёт по физической культуре</div>
+      <h1 class="hero-title">BASKETBALL <span>IQ</span></h1>
+      <p class="hero-desc">
+        Понятный и интересный тест для зачёта по физре: правила игры на площадке, пробежки, фолы, разметка и базовые игровые ситуации. Без сложных фамилий и дат!
+      </p>
+
+      <div class="visual-stage">
+        <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="woodHero" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#c8833e"/>
+              <stop offset="100%" stop-color="#96561e"/>
+            </linearGradient>
+            <linearGradient id="paintHero" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#ea580c"/>
+              <stop offset="100%" stop-color="#c2410c"/>
+            </linearGradient>
+          </defs>
+          <rect width="800" height="400" fill="#0f172a"/>
+          <rect x="35" y="24" width="730" height="352" rx="16" fill="url(#woodHero)" stroke="#ffffff" stroke-width="4"/>
+          <rect x="35" y="124" width="215" height="152" fill="url(#paintHero)" stroke="#ffffff" stroke-width="3.5"/>
+          <circle cx="250" cy="200" r="76" fill="none" stroke="#ffffff" stroke-width="3.5"/>
+          <path d="M 35 50 L 175 50 A 170 170 0 0 1 175 350 L 35 350" fill="none" stroke="#ffffff" stroke-width="4"/>
+          <line x1="400" y1="24" x2="400" y2="376" stroke="#ffffff" stroke-width="4"/>
+          <circle cx="400" cy="200" r="68" fill="none" stroke="#ffffff" stroke-width="4"/>
+          <line x1="72" y1="165" x2="72" y2="235" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="92" cy="200" r="15" fill="none" stroke="#ffedd5" stroke-width="4"/>
+          <g transform="translate(565, 200)">
+            <circle r="68" fill="#ea580c" stroke="#18181b" stroke-width="4"/>
+            <line x1="-68" y1="0" x2="68" y2="0" stroke="#18181b" stroke-width="3.5"/>
+            <line x1="0" y1="-68" x2="0" y2="68" stroke="#18181b" stroke-width="3.5"/>
+            <path d="M -45 -50 Q -15 0 -45 50" fill="none" stroke="#18181b" stroke-width="3.5"/>
+            <path d="M 45 -50 Q 15 0 45 50" fill="none" stroke="#18181b" stroke-width="3.5"/>
+          </g>
+        </svg>
+        <span class="stage-badge">ШКОЛЬНАЯ И СТУДЕНЧЕСКАЯ ПРОГРАММА</span>
+      </div>
+
+      <div class="field-box">
+        <label for="input-student">Твоё Имя, Фамилия и класс / группа:</label>
+        <input type="text" id="input-student" placeholder="Например: Алексей Смирнов, 10А / ИС-21" maxlength="55" />
+      </div>
+
+      <div class="chips-row">
+        <div class="chip"><strong>15</strong>вопросов</div>
+        <div class="chip"><strong>🔀</strong>перемешаны</div>
+        <div class="chip"><strong>🏆</strong>карточка</div>
+      </div>
+
+      <button type="button" id="btn-start" class="btn btn-primary" onclick="startQuiz()">Выйти на паркет →</button>
+    </section>
+
+    <!-- QUIZ SCREEN -->
+    <section id="screen-quiz" class="glass-card hidden">
+      <div class="quiz-top">
+        <span class="q-step" id="lbl-step">Вопрос 1 из 15</span>
+        <div class="badges-right">
+          <span class="q-streak hidden" id="lbl-streak">🔥 Серия: 2</span>
+          <span class="q-score" id="lbl-score">Счёт: 0</span>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar" id="bar-fill"></div>
+      </div>
+
+      <div class="visual-stage">
+        <div id="q-art" style="width:100%;height:100%;"></div>
+        <span class="stage-badge" id="lbl-cat">Правила игры</span>
+      </div>
+
+      <h2 class="q-title" id="lbl-question">Загрузка вопроса...</h2>
+
+      <div class="options-list" id="box-options"></div>
+
+      <div class="explain-card hidden" id="box-explain">
+        <div class="explain-head" id="lbl-exp-head"></div>
+        <div class="explain-body" id="lbl-exp-body"></div>
+      </div>
+
+      <div class="next-wrap">
+        <button type="button" id="btn-next" class="btn btn-primary hidden" onclick="nextQuestion()">Следующий вопрос →</button>
+      </div>
+    </section>
+
+    <!-- RESULT SCREEN -->
+    <section id="screen-result" class="glass-card result-box hidden">
+      <div class="top-pill">🏁 Финальная сирена</div>
+      <h2 class="hero-title" id="res-headline" style="font-size:32px;">Матч окончен!</h2>
+
+      <div class="player-card">
+        <div class="card-top-meta">
+          <span>BASKETBALL PASS • 2026</span>
+          <span id="res-date">ЗАЧЁТ ПО ФИЗКУЛЬТУРЕ</span>
+        </div>
+
+        <div class="score-ring">
+          <span class="big-num" id="res-score">0</span>
+          <span class="out-of">из 15 баллов</span>
+        </div>
+
+        <div class="student-tag" id="res-student">Участник</div>
+        <div class="rank-title" id="res-rank">Титул: Новичок площадки</div>
+        <div class="grade-pill" id="res-grade">Зачёт</div>
+
+        <p class="result-note" id="res-text"></p>
+
+        <div class="stats-mini-grid">
+          <div class="stat-cell">
+            <span id="stat-acc">0%</span>
+            <small>Точность</small>
+          </div>
+          <div class="stat-cell">
+            <span id="stat-streak">0</span>
+            <small>Макс. серия 🔥</small>
+          </div>
+          <div class="stat-cell">
+            <span id="stat-correct">0 / 15</span>
+            <small>Верных ответов</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button type="button" class="btn btn-primary" id="btn-copy" onclick="copyResult()">📋 Скопировать итог</button>
+        <button type="button" class="btn btn-secondary" onclick="toggleReview()">📝 Разбор ответов</button>
+      </div>
+
+      <div class="review-panel hidden" id="review-panel">
+        <h3>Твои ответы по всем 15 вопросам:</h3>
+        <div id="review-list"></div>
+      </div>
+
+      <div style="margin-top: 12px;">
+        <button type="button" class="btn btn-secondary" onclick="restartQuiz()">Пройти заново ↻</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    var ILLUSTRATIONS = {
+      court: '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wood1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8833e"/><stop offset="100%" stop-color="#9e5d23"/></linearGradient><linearGradient id="paint1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ea580c"/><stop offset="100%" stop-color="#c2410c"/></linearGradient></defs><rect width="800" height="400" fill="#111827"/><rect x="35" y="25" width="730" height="350" rx="14" fill="url(#wood1)" stroke="#ffffff" stroke-width="4"/><rect x="35" y="125" width="215" height="150" fill="url(#paint1)" stroke="#ffffff" stroke-width="3.5"/><circle cx="250" cy="200" r="75" fill="none" stroke="#ffffff" stroke-width="3.5"/><path d="M 35 52 L 175 52 A 168 168 0 0 1 175 348 L 35 348" fill="none" stroke="#ffffff" stroke-width="4"/><line x1="400" y1="25" x2="400" y2="375" stroke="#ffffff" stroke-width="4"/><circle cx="400" cy="200" r="68" fill="none" stroke="#ffffff" stroke-width="4"/><line x1="72" y1="165" x2="72" y2="235" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/><circle cx="92" cy="200" r="15" fill="none" stroke="#ffedd5" stroke-width="4"/></svg>',
+
+      shotclock: '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="400" fill="#0d131f"/><rect x="200" y="95" width="400" height="255" rx="12" fill="rgba(255,255,255,0.06)" stroke="#cbd5e1" stroke-width="6"/><rect x="335" y="210" width="130" height="95" fill="none" stroke="#ff6b1a" stroke-width="5"/><rect x="315" y="22" width="170" height="68" rx="10" fill="#05070c" stroke="#ef4444" stroke-width="4"/><text x="400" y="71" text-anchor="middle" fill="#ef4444" font-family="monospace" font-weight="900" font-size="48" letter-spacing="4">24</text><rect x="386" y="295" width="28" height="16" fill="#ff6b1a"/><ellipse cx="400" cy="316" rx="58" ry="14" fill="none" stroke="#ff6b1a" stroke-width="6"/><path d="M 352 320 L 366 375 M 376 324 L 384 375 M 400 326 L 400 375 M 424 324 L 416 375 M 448 320 L 434 375" stroke="#e2e8f0" stroke-width="2.5" opacity="0.7"/></svg>',
+
+      ball: '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bball1" cx="38%" cy="32%" r="65%"><stop offset="0%" stop-color="#ff944d"/><stop offset="55%" stop-color="#ea580c"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient></defs><rect width="800" height="400" fill="#0d131f"/><circle cx="400" cy="200" r="145" fill="url(#bball1)"/><g fill="none" stroke="#18181b" stroke-width="6"><circle cx="400" cy="200" r="145"/><line x1="255" y1="200" x2="545" y2="200"/><line x1="400" y1="55" x2="400" y2="345"/><path d="M 300 94 Q 365 200 300 306"/><path d="M 500 94 Q 435 200 500 306"/></g><ellipse cx="345" cy="135" rx="35" ry="16" transform="rotate(-32 345 135)" fill="rgba(255,255,255,0.24)"/></svg>',
+
+      referee: '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="400" fill="#0e1522"/><g transform="translate(115, 75)"><rect width="165" height="250" rx="22" fill="#162033" stroke="#ef4444" stroke-width="3.5"/><circle cx="82" cy="95" r="44" fill="none" stroke="#ef4444" stroke-width="5"/><text x="82" y="106" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="900" font-size="28">3s</text><text x="82" y="195" text-anchor="middle" fill="#fca5a5" font-family="sans-serif" font-weight="700" font-size="15">КРАСКА</text></g><g transform="translate(317, 75)"><rect width="165" height="250" rx="22" fill="#162033" stroke="#f59e0b" stroke-width="3.5"/><circle cx="82" cy="95" r="44" fill="none" stroke="#f59e0b" stroke-width="5"/><text x="82" y="106" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="900" font-size="28">8s</text><text x="82" y="195" text-anchor="middle" fill="#fcd34d" font-family="sans-serif" font-weight="700" font-size="15">ВЫХОД</text></g><g transform="translate(520, 75)"><rect width="165" height="250" rx="22" fill="#162033" stroke="#10b981" stroke-width="3.5"/><circle cx="82" cy="95" r="44" fill="none" stroke="#10b981" stroke-width="5"/><text x="82" y="106" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="900" font-size="28">24s</text><text x="82" y="195" text-anchor="middle" fill="#6ee7b7" font-family="sans-serif" font-weight="700" font-size="15">АТАКА</text></g></svg>',
+
+      swish: '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#090d16"/></linearGradient></defs><rect width="800" height="400" fill="url(#sky1)"/><path d="M 110 330 Q 360 35 615 175" fill="none" stroke="#ff6b1a" stroke-width="5" stroke-dasharray="12 10"/><circle cx="565" cy="148" r="28" fill="#ea580c" stroke="#fed7aa" stroke-width="3"/><line x1="675" y1="95" x2="675" y2="245" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/><ellipse cx="622" cy="182" rx="46" ry="12" fill="none" stroke="#ef4444" stroke-width="6"/><path d="M 584 186 L 598 245 M 608 190 L 615 245 M 636 190 L 629 245 M 660 186 L 646 245" stroke="#cbd5e1" stroke-width="2.5"/></svg>',
+
+      tactics: '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="400" fill="#0f172a"/><rect x="40" y="30" width="720" height="340" rx="18" fill="#131c2e" stroke="#334155" stroke-width="3"/><circle cx="220" cy="270" r="26" fill="#ff6b1a"/><text x="220" y="277" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="900" font-size="20">1</text><circle cx="380" cy="165" r="26" fill="#3b82f6"/><text x="380" y="172" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="900" font-size="20">4</text><path d="M 248 255 Q 315 210 355 182" fill="none" stroke="#fbbf24" stroke-width="4" stroke-dasharray="8 6"/><path d="M 405 185 L 540 265" fill="none" stroke="#10b981" stroke-width="5"/><polygon points="552,272 530,271 542,253" fill="#10b981"/><text x="615" y="120" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-weight="800" font-size="22">ЗАСЛОН</text></svg>',
+
+      street3x3: '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="400" fill="#0b111e"/><rect x="60" y="40" width="680" height="320" rx="20" fill="#1e293b" stroke="#38bdf8" stroke-width="4"/><path d="M 240 40 L 240 160 A 160 160 0 0 0 560 160 L 560 40" fill="none" stroke="#ff6b1a" stroke-width="5"/><rect x="330" y="40" width="140" height="110" fill="rgba(56, 189, 248, 0.18)" stroke="#38bdf8" stroke-width="3.5"/><text x="400" y="295" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="46" letter-spacing="4">3 × 3</text></svg>',
+
+      whistle: '<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="400" fill="#0d131f"/><circle cx="400" cy="200" r="130" fill="rgba(239, 68, 68, 0.12)" stroke="#ef4444" stroke-width="4" stroke-dasharray="14 10"/><text x="400" y="185" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="44">ФОЛ!</text><text x="400" y="235" text-anchor="middle" fill="#fca5a5" font-family="sans-serif" font-weight="700" font-size="20">СВИСТОК СУДЬИ</text></svg>'
+    };
+
+    // Ученический, понятный, но увлекательный пул из 15 вопросов
+    // Порядок вариантов ответа перемешивается автоматически при каждом показе вопроса!
+    var QUESTIONS = [
+      {
+        cat: "Основы игры",
+        art: "court",
+        q: "Сколько игроков от каждой команды одновременно находится на площадке во время классического матча 5×5?",
+        opts: [
+          "По 5 игроков от каждой команды",
+          "По 6 игроков (как в волейболе)",
+          "По 7 игроков с учётом вратаря",
+          "По 4 игрока на половине поля"
+        ],
+        ans: 0,
+        exp: "В классическом баскетболе на паркете одновременно играют 5 на 5, а остальные игроки находятся на скамейке запасных."
+      },
+      {
+        cat: "Начисление очков",
+        art: "swish",
+        q: "Сколько очков приносит команде точный бросок с игры, выполненный из-за дальней дуги?",
+        opts: [
+          "3 очка",
+          "2 очка",
+          "1 очко",
+          "4 очка"
+        ],
+        ans: 0,
+        exp: "Дальний бросок из-за трёхочковой дуги оценивается в 3 очка, обычный бросок с игры ближе дуги — в 2 очка, а штрафной бросок — в 1 очко."
+      },
+      {
+        cat: "Нарушения с мячом",
+        art: "ball",
+        q: "Игрок закончил ведение мяча, взял его в две руки, а затем снова начал стучать мячом об пол. Как называется это нарушение?",
+        opts: [
+          "Двойное ведение",
+          "Пробежка",
+          "Аут",
+          "Спорный мяч"
+        ],
+        ans: 0,
+        exp: "После остановки дриблинга и фиксации мяча руками начинать ведение заново запрещено — судья фиксирует «двойное ведение» и отдаёт мяч сопернику."
+      },
+      {
+        cat: "Правила шагов",
+        art: "whistle",
+        q: "Сколько шагов разрешается сделать игроку с мячом в руках без удара об пол (например, при завершении атаки из-под кольца)?",
+        opts: [
+          "Не более 2 шагов",
+          "Не более 3 шагов",
+          "Не более 4 шагов",
+          "Сколько угодно, если бежишь к кольцу"
+        ],
+        ans: 0,
+        exp: "В баскетболе действует правило двух шагов: поймав мяч в движении, игрок может сделать два шага для остановки или броска. Третий шаг — это уже «пробежка»."
+      },
+      {
+        cat: "Разметка площадки",
+        art: "court",
+        q: "Игрок наступил кроссовком прямо на трёхочковую линию и забросил мяч в кольцо. Сколько очков засчитает судья?",
+        opts: [
+          "2 очка, потому что линия относится к двухочковой зоне",
+          "3 очка, если мяч залетел чисто без касания щита",
+          "3 очка, так как пятка была за линией",
+          "Бросок отменят из-за заступа"
+        ],
+        ans: 0,
+        exp: "Сама трёхочковая линия не входит в трёхочковую зону. Если в момент отрыва от пола нога касается линии, бросок стоит 2 очка."
+      },
+      {
+        cat: "Правило времени",
+        art: "shotclock",
+        q: "Сколько секунд даётся атакующей команде на весь розыгрыш и бросок по кольцу в классическом баскетболе?",
+        opts: [
+          "24 секунды",
+          "15 секунд",
+          "30 секунд",
+          "45 секунд"
+        ],
+        ans: 0,
+        exp: "На атаку отводится 24 секунды. Если за это время мяч не коснётся дужки кольца соперника, звучит сирена и мяч переходит другой команде."
+      },
+      {
+        cat: "Игровые ситуации",
+        art: "referee",
+        q: "Сколько секунд нападающий имеет право непрерывно стоять в трёхсекундной зоне («краске») под кольцом соперника, пока мяч у его команды?",
+        opts: [
+          "Не более 3 секунд",
+          "Не более 5 секунд",
+          "Не более 8 секунд",
+          "Стоять можно сколько угодно"
+        ],
+        ans: 0,
+        exp: "Чтобы высокие игроки не «дежурили» постоянно прямо под чужим кольцом, введено правило 3 секунд в ограниченной зоне соперника."
+      },
+      {
+        cat: "Фолы и наказания",
+        art: "whistle",
+        q: "Защитник ударил по рукам игрока, который в этот момент выполнял двухочковый бросок, и мяч в кольцо не попал. Что назначит судья?",
+        opts: [
+          "2 штрафных броска",
+          "1 штрафной бросок",
+          "Просто вбрасывание из-за боковой линии",
+          "Удаление защитника на 2 минуты"
+        ],
+        ans: 0,
+        exp: "Если фол совершён на игроке в момент броска и мяч не залетел, назначается столько штрафных, сколько стоил бросок (2 или 3). Если мяч всё же попал — засчитывают гол и дают ещё 1 бонусный штрафной!"
+      },
+      {
+        cat: "Лимит фолов",
+        art: "referee",
+        q: "После скольких персональных фолов игрок удаляется с площадки до конца матча по правилам FIBA (и на школьных соревнованиях)?",
+        opts: [
+          "После 5 фолов",
+          "После 3 фолов",
+          "После 6 фолов",
+          "После 2 фолов (как жёлтые карточки)"
+        ],
+        ans: 0,
+        exp: "По правилам FIBA лимит составляет 5 персональных фолов. Получив пятый фол, игрок садится на скамейку до конца игры, а вместо него выходит запасной."
+      },
+      {
+        cat: "Перевод мяча",
+        art: "court",
+        q: "Команда перевела мяч на половину площадки соперника. Можно ли отдать пас назад своему игроку на свою половину поля?",
+        opts: [
+          "Нет, это нарушение («зона»)",
+          "Да, в любой момент атаки",
+          "Да, если пас отдаётся от пола",
+          "Можно, но только капитану команды"
+        ],
+        ans: 0,
+        exp: "После перехода центральной линии в передовую зону возвращать мяч назад на свою половину запрещено — судья зафиксирует нарушение правила зоны."
+      },
+      {
+        cat: "Курьёзный случай",
+        art: "swish",
+        q: "Игрок в борьбе под кольцом случайно смахнул мяч в собственную корзину. Что произойдёт?",
+        opts: [
+          "Соперникам засчитают 2 очка",
+          "Гол не засчитают, будет спорный мяч",
+          "Назначат штрафной в пользу пострадавшей команды",
+          "Игрока удалят с поля за автогол"
+        ],
+        ans: 0,
+        exp: "Автогол в баскетболе засчитывается! Если мяч случайно заброшен в своё кольцо с игры, 2 очка записывают капитану команды соперника."
+      },
+      {
+        cat: "Линии и аут",
+        art: "court",
+        q: "Игрок с мячом наступил на боковую линию площадки. Считается ли это выходом мяча в аут?",
+        opts: [
+          "Да, боковая и лицевая линии считаются частью аута",
+          "Нет, аут фиксируется только если за линию заступили обе ноги",
+          "Нет, если сам мяч остался над площадкой",
+          "Считается только в последние 2 минуты игры"
+        ],
+        ans: 0,
+        exp: "Ограничивающие линии площадки сами по себе уже являются границей (аутом). Наступил на линию с мячом — значит вышел за пределы поля."
+      },
+      {
+        cat: "Баскетбол 3×3",
+        art: "street3x3",
+        q: "До какого счёта идёт игра в уличном и олимпийском баскетболе 3×3 (если не закончились 10 минут времени)?",
+        opts: [
+          "До 21 очка",
+          "До 15 очков",
+          "До 11 очков",
+          "До 30 очков"
+        ],
+        ans: 0,
+        exp: "В баскетболе 3×3 побеждает команда, которая первой набрала 21 очко либо вела в счёте по истечении 10 минут чистого времени."
+      },
+      {
+        cat: "Позиции и тактика",
+        art: "tactics",
+        q: "Как называется приём в нападении, когда игрок без мяча встаёт неподвижно на пути защитника, чтобы освободить своего партнёра?",
+        opts: [
+          "Заслон",
+          "Блок-шот",
+          "Подбор",
+          "Перехват"
+        ],
+        ans: 0,
+        exp: "Заслон — один из главных командных приёмов в баскетболе. Главное правило: ставящий заслон игрок должен стоять неподвижно, иначе свистнут фол в нападении."
+      },
+      {
+        cat: "Структура матча",
+        art: "shotclock",
+        q: "Из скольких четвертей состоит стандартный баскетбольный матч по правилам FIBA?",
+        opts: [
+          "Из 4 четвертей по 10 минут",
+          "Из 2 таймов по 20 минут",
+          "Из 3 периодов по 15 минут",
+          "Из 4 четвертей по 15 минут"
+        ],
+        ans: 0,
+        exp: "Матч по правилам FIBA состоит из 4 четвертей по 10 минут чистого времени. Если по итогам 4 четвертей ничья, назначается овертайм на 5 минут."
+      }
+    ];
+
+    var currentIdx = 0;
+    var currentScore = 0;
+    var currentStreak = 0;
+    var maxStreak = 0;
+    var studentName = "";
+    var userHistory = [];
+    var currentShuffledOptions = [];
+    var KEYS = ["A", "B", "C", "D"];
+
+    // Перемешивание вариантов ответа (алгоритм Фишера — Йетса)
+    function shuffleOptions(optsArray, correctIdx) {
+      var list = [];
+      for (var i = 0; i < optsArray.length; i++) {
+        list.push({
+          text: optsArray[i],
+          isCorrect: (i === correctIdx)
+        });
+      }
+      for (var j = list.length - 1; j > 0; j--) {
+        var r = Math.floor(Math.random() * (j + 1));
+        var temp = list[j];
+        list[j] = list[r];
+        list[r] = temp;
+      }
+      return list;
+    }
+
+    function startQuiz() {
+      var inputEl = document.getElementById("input-student");
+      studentName = (inputEl && inputEl.value.trim()) ? inputEl.value.trim() : "Ученик / Студент";
+      currentIdx = 0;
+      currentScore = 0;
+      currentStreak = 0;
+      maxStreak = 0;
+      userHistory = [];
+
+      document.getElementById("screen-start").classList.add("hidden");
+      document.getElementById("screen-result").classList.add("hidden");
+      document.getElementById("review-panel").classList.add("hidden");
+      document.getElementById("screen-quiz").classList.remove("hidden");
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      var item = QUESTIONS[currentIdx];
+      document.getElementById("lbl-step").textContent = "Вопрос " + (currentIdx + 1) + " из " + QUESTIONS.length;
+      document.getElementById("lbl-score").textContent = "Счёт: " + currentScore;
+      document.getElementById("bar-fill").style.width = (((currentIdx + 1) / QUESTIONS.length) * 100) + "%";
+
+      var streakEl = document.getElementById("lbl-streak");
+      if (currentStreak >= 2) {
+        streakEl.textContent = "🔥 Серия: " + currentStreak;
+        streakEl.classList.remove("hidden");
+      } else {
+        streakEl.classList.add("hidden");
+      }
+
+      document.getElementById("q-art").innerHTML = ILLUSTRATIONS[item.art];
+      document.getElementById("lbl-cat").textContent = item.cat;
+      document.getElementById("lbl-question").textContent = item.q;
+
+      var boxOptions = document.getElementById("box-options");
+      boxOptions.innerHTML = "";
+
+      document.getElementById("box-explain").classList.add("hidden");
+      document.getElementById("btn-next").classList.add("hidden");
+
+      // Перемешиваем варианты для каждого вопроса!
+      currentShuffledOptions = shuffleOptions(item.opts, item.ans);
+
+      for (var i = 0; i < currentShuffledOptions.length; i++) {
+        (function(optIndex) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "opt-btn";
+          btn.innerHTML = '<span class="opt-key">' + KEYS[optIndex] + '</span><span>' + currentShuffledOptions[optIndex].text + '</span>';
+          btn.onclick = function() {
+            selectOption(optIndex, btn);
+          };
+          boxOptions.appendChild(btn);
+        })(i);
+      }
+    }
+
+    function selectOption(pickedIdx, btnEl) {
+      var item = QUESTIONS[currentIdx];
+      var btns = document.getElementById("box-options").querySelectorAll(".opt-btn");
+      var correctOptionText = "";
+      var pickedOptionText = currentShuffledOptions[pickedIdx].text;
+
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].disabled = true;
+        if (currentShuffledOptions[i].isCorrect) {
+          correctOptionText = currentShuffledOptions[i].text;
+        }
+      }
+
+      var expHead = document.getElementById("lbl-exp-head");
+      var expBox = document.getElementById("box-explain");
+      var isRight = currentShuffledOptions[pickedIdx].isCorrect;
+
+      if (isRight) {
+        currentScore++;
+        currentStreak++;
+        if (currentStreak > maxStreak) maxStreak = currentStreak;
+        document.getElementById("lbl-score").textContent = "Счёт: " + currentScore;
+        btnEl.classList.add("correct");
+        expHead.textContent = currentStreak >= 3 ? "🔥 Точно в кольцо! Серия из " + currentStreak + " подряд!" : "✅ Точно в кольцо!";
+        expHead.style.color = "#10b981";
+        expBox.style.borderLeftColor = "#10b981";
+
+        var streakEl = document.getElementById("lbl-streak");
+        if (currentStreak >= 2) {
+          streakEl.textContent = "🔥 Серия: " + currentStreak;
+          streakEl.classList.remove("hidden");
+        }
+      } else {
+        currentStreak = 0;
+        document.getElementById("lbl-streak").classList.add("hidden");
+        btnEl.classList.add("wrong");
+        btnEl.classList.add("shake");
+        for (var j = 0; j < currentShuffledOptions.length; j++) {
+          if (currentShuffledOptions[j].isCorrect) {
+            btns[j].classList.add("correct");
+          }
+        }
+        expHead.textContent = "❌ Мимо, запоминай правило:";
+        expHead.style.color = "#ef4444";
+        expBox.style.borderLeftColor = "#ef4444";
+      }
+
+      userHistory.push({
+        question: item.q,
+        picked: pickedOptionText,
+        correct: correctOptionText,
+        isRight: isRight
+      });
+
+      document.getElementById("lbl-exp-body").textContent = item.exp;
+      expBox.classList.remove("hidden");
+
+      var nextBtn = document.getElementById("btn-next");
+      nextBtn.textContent = (currentIdx === QUESTIONS.length - 1) ? "Завершить и получить карточку 🏆" : "Следующий вопрос →";
+      nextBtn.classList.remove("hidden");
+    }
+
+    function nextQuestion() {
+      currentIdx++;
+      if (currentIdx < QUESTIONS.length) {
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById("screen-quiz").classList.add("hidden");
+      document.getElementById("screen-result").classList.remove("hidden");
+
+      var pct = Math.round((currentScore / QUESTIONS.length) * 100);
+      document.getElementById("res-score").textContent = currentScore;
+      document.getElementById("res-student").textContent = studentName;
+      document.getElementById("stat-acc").textContent = pct + "%";
+      document.getElementById("stat-streak").textContent = maxStreak;
+      document.getElementById("stat-correct").textContent = currentScore + " / " + QUESTIONS.length;
+
+      var now = new Date();
+      var dateStr = ("0" + now.getDate()).slice(-2) + "." + ("0" + (now.getMonth() + 1)).slice(-2) + "." + now.getFullYear();
+      document.getElementById("res-date").textContent = dateStr;
+
+      var headline = document.getElementById("res-headline");
+      var rankEl = document.getElementById("res-rank");
+      var gradePill = document.getElementById("res-grade");
+      var resText = document.getElementById("res-text");
+
+      if (currentScore >= 13) {
+        headline.textContent = "MVP площадки! 🏆";
+        rankEl.textContent = "Титул: Капитан сборной";
+        gradePill.textContent = "Оценка: 5 (Отлично) • ЗАЧЁТ";
+        gradePill.style.background = "rgba(16, 185, 129, 0.22)";
+        gradePill.style.color = "#34d399";
+        resText.textContent = "Идеальное знание баскетбольных правил! Можно смело показывать карточку преподавателю.";
+        launchConfetti();
+      } else if (currentScore >= 10) {
+        headline.textContent = "Уверенный бросок! 🔥";
+        rankEl.textContent = "Титул: Игрок стартовой пятёрки";
+        gradePill.textContent = "Оценка: 4 (Хорошо) • ЗАЧЁТ";
+        gradePill.style.background = "rgba(16, 185, 129, 0.22)";
+        gradePill.style.color = "#34d399";
+        resText.textContent = "Отличный результат! Базовые правила и ситуации на паркете освоены на ура.";
+        launchConfetti();
+      } else if (currentScore >= 7) {
+        headline.textContent = "Зачёт взят! 🏀";
+        rankEl.textContent = "Титул: Уверенный запасной";
+        gradePill.textContent = "Оценка: 3 (Удовл.) • ЗАЧЁТ";
+        gradePill.style.background = "rgba(245, 158, 11, 0.22)";
+        gradePill.style.color = "#fbbf24";
+        resText.textContent = "Зачётный минимум пройден! Посмотри разбор ошибок ниже, чтобы подтянуть спорные моменты.";
+      } else {
+        headline.textContent = "Нужна разминка 😅";
+        rankEl.textContent = "Титул: Новичок на тренировке";
+        gradePill.textContent = "Незачёт • Попробуй ещё раз";
+        gradePill.style.background = "rgba(239, 68, 68, 0.22)";
+        gradePill.style.color = "#f87171";
+        resText.textContent = "Ничего страшного — открой разбор ответов, пробегись по правилам и пересдай прямо сейчас!";
+      }
+
+      buildReviewList();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function buildReviewList() {
+      var listEl = document.getElementById("review-list");
+      listEl.innerHTML = "";
+      for (var i = 0; i < userHistory.length; i++) {
+        var h = userHistory[i];
+        var div = document.createElement("div");
+        div.className = "review-item" + (h.isRight ? "" : " is-wrong");
+        var html = '<div class="review-q">' + (i + 1) + '. ' + h.question + '</div>';
+        if (h.isRight) {
+          html += '<div class="review-ans" style="color:#34d399;">✅ Твой ответ: ' + h.picked + '</div>';
+        } else {
+          html += '<div class="review-ans" style="color:#f87171;">❌ Твой ответ: ' + h.picked + '</div>';
+          html += '<div class="review-ans" style="color:#34d399;">✔ Правильно: ' + h.correct + '</div>';
+        }
+        div.innerHTML = html;
+        listEl.appendChild(div);
+      }
+    }
+
+    function toggleReview() {
+      var panel = document.getElementById("review-panel");
+      panel.classList.toggle("hidden");
+    }
+
+    function copyResult() {
+      var gradeTxt = document.getElementById("res-grade").textContent;
+      var summary = "🏀 Тест по баскетболу\n" +
+                    "Участник: " + studentName + "\n" +
+                    "Результат: " + currentScore + " из " + QUESTIONS.length + "\n" +
+                    gradeTxt;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(summary).then(function() {
+          var btn = document.getElementById("btn-copy");
+          btn.textContent = "✅ Скопировано!";
+          setTimeout(function() { btn.textContent = "📋 Скопировать итог"; }, 2200);
+        });
+      } else {
+        alert(summary);
+      }
+    }
+
+    function restartQuiz() {
+      document.getElementById("screen-result").classList.add("hidden");
+      document.getElementById("screen-start").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Лёгкий салют-конфетти при успешной сдаче зачёта
+    function launchConfetti() {
+      var canvas = document.getElementById("confetti-canvas");
+      if (!canvas) return;
+      var ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      var pieces = [];
+      var colors = ["#ff6b1a", "#ffb347", "#10b981", "#38bdf8", "#ffffff"];
+      for (var i = 0; i < 85; i++) {
+        pieces.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          w: Math.random() * 9 + 5,
+          h: Math.random() * 5 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vy: Math.random() * 3.5 + 2.5,
+          vx: Math.random() * 2 - 1,
+          rot: Math.random() * 360
+        });
+      }
+
+      var frames = 0;
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (var i = 0; i < pieces.length; i++) {
+          var p = pieces[i];
+          p.y += p.vy;
+          p.x += p.vx;
+          p.rot += 4;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot * Math.PI / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        frames++;
+        if (frames < 140) {
+          requestAnimationFrame(draw);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+      draw();
+    }
+  </script>
+</body>
+</html>
